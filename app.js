@@ -2,52 +2,99 @@ const apiKey = "";
 
 const searchButton = document.getElementById('searchButton');
 const searchInput = document.getElementById('searchInput');
-const gifImage = document.getElementById('gifImage');
+const gifContainer = document.getElementById('gifContainer');
 
-async function fetchSearchedGif() {
-    const searchTerm = searchInput.value.trim();
+const paginationContainer = document.getElementById('paginationContainer');
+const prevButton = document.getElementById('prevButton');
+const nextButton = document.getElementById('nextButton');
+const pageInfo = document.getElementById('pageInfo');
 
-    if (searchTerm === "") {
-        gifImage.alt = "Proszę wpisać frazę do wyszukania.";
-        gifImage.src = "";
-        return; 
+let currentSearchTerm = "";
+let currentOffset = 0;
+const limit = 12;
+let totalResults = 0;
+
+async function fetchGifs(searchTerm, offset) {
+    if (searchTerm.trim() === "") {
+        gifContainer.innerHTML = "<p>Proszę wpisać frazę do wyszukania.</p>";
+        paginationContainer.style.display = 'none';
+        return;
     }
 
-    gifImage.src = "";
-    gifImage.alt = "Ładowanie GIF-a...";
+    gifContainer.innerHTML = "<p>Ładowanie GIF-ów...</p>";
+    paginationContainer.style.display = 'none';
 
-    const endpoint = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(searchTerm)}&limit=1&rating=g`;
+    currentSearchTerm = searchTerm;
+    currentOffset = offset;
+
+    const endpoint = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(searchTerm)}&limit=${limit}&offset=${offset}&rating=g`;
 
     try {
         const response = await fetch(endpoint);
-
         if (!response.ok) {
             throw new Error(`Błąd sieci: ${response.status}`);
         }
 
         const json = await response.json();
-        
-        console.log(json); 
+        console.log(json);
 
-        if (json.data && json.data.length > 0) {
-            const gifUrl = json.data[0].images.downsized_large.url;
-            gifImage.src = gifUrl;
-            gifImage.alt = `GIF dla frazy: ${searchTerm}`;
-        } else {
-            gifImage.src = "";
-            gifImage.alt = "Nie znaleziono GIF-ów dla tej frazy.";
-        }
+        totalResults = json.pagination.total_count;
+
+        displayGifs(json.data);
+        updatePaginationUI();
 
     } catch (error) {
-        console.error("Nie udało się pobrać GIF-a:", error);
-        gifImage.alt = "Wystąpił błąd podczas ładowania GIF-a. Spróbuj ponownie.";
+        console.error("Nie udało się pobrać GIF-ów:", error);
+        gifContainer.innerHTML = "<p>Wystąpił błąd podczas ładowania. Spróbuj ponownie.</p>";
+        paginationContainer.style.display = 'none';
     }
 }
 
-searchButton.addEventListener('click', fetchSearchedGif);
+function displayGifs(gifs) {
+    gifContainer.innerHTML = "";
+
+    if (gifs.length === 0) {
+        gifContainer.innerHTML = "<p>Nie znaleziono GIF-ów dla tej frazy.</p>";
+        paginationContainer.style.display = 'none';
+        return;
+    }
+
+    paginationContainer.style.display = 'flex';
+
+    gifs.forEach(gif => {
+        const img = document.createElement('img');
+        img.src = gif.images.fixed_height.url;
+        img.alt = gif.title || "GIF";
+        gifContainer.appendChild(img);
+    });
+}
+
+function updatePaginationUI() {
+    const currentPage = Math.floor(currentOffset / limit) + 1;
+    pageInfo.textContent = `Strona: ${currentPage}`;
+
+    prevButton.disabled = (currentOffset === 0);
+
+    nextButton.disabled = (currentOffset + limit >= totalResults);
+}
+
+searchButton.addEventListener('click', () => {
+    fetchGifs(searchInput.value, 0);
+});
 
 searchInput.addEventListener('keyup', (event) => {
     if (event.key === "Enter") {
-        fetchSearchedGif();
+        fetchGifs(searchInput.value, 0);
     }
 });
+
+nextButton.addEventListener('click', () => {
+    fetchGifs(currentSearchTerm, currentOffset + limit);
+});
+
+prevButton.addEventListener('click', () => {
+    const newOffset = Math.max(0, currentOffset - limit);
+    fetchGifs(currentSearchTerm, newOffset);
+});
+
+paginationContainer.style.display = 'none';
