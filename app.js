@@ -1,13 +1,22 @@
-const apiKey = ""; 
+const apiKey = "";
 
-const endpoint = `https://api.giphy.com/v1/gifs/random?api_key=${apiKey}&rating=g`;
-
-const gifButton = document.getElementById('gifButton');
+const searchButton = document.getElementById('searchButton');
+const searchInput = document.getElementById('searchInput');
 const gifImage = document.getElementById('gifImage');
 
-async function fetchRandomGif() {
+async function fetchSearchedGif() {
+    const searchTerm = searchInput.value.trim();
+
+    if (searchTerm === "") {
+        gifImage.alt = "Proszę wpisać frazę do wyszukania.";
+        gifImage.src = "";
+        return; 
+    }
+
     gifImage.src = "";
     gifImage.alt = "Ładowanie GIF-a...";
+
+    const endpoint = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(searchTerm)}&limit=1&rating=g`;
 
     try {
         const response = await fetch(endpoint);
@@ -20,10 +29,14 @@ async function fetchRandomGif() {
         
         console.log(json); 
 
-        const gifUrl = json.data.images.downsized_large.url;
-
-        gifImage.src = gifUrl;
-        gifImage.alt = "Losowy GIF";
+        if (json.data && json.data.length > 0) {
+            const gifUrl = json.data[0].images.downsized_large.url;
+            gifImage.src = gifUrl;
+            gifImage.alt = `GIF dla frazy: ${searchTerm}`;
+        } else {
+            gifImage.src = "";
+            gifImage.alt = "Nie znaleziono GIF-ów dla tej frazy.";
+        }
 
     } catch (error) {
         console.error("Nie udało się pobrać GIF-a:", error);
@@ -31,6 +44,10 @@ async function fetchRandomGif() {
     }
 }
 
-gifButton.addEventListener('click', fetchRandomGif);
+searchButton.addEventListener('click', fetchSearchedGif);
 
-fetchRandomGif();
+searchInput.addEventListener('keyup', (event) => {
+    if (event.key === "Enter") {
+        fetchSearchedGif();
+    }
+});

@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Losowy GIF z GIPHY</title>
+    <title>Wyszukiwarka GIF-ów GIPHY</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Generator Losowych GIF-ów</h1>
+    <h1>Wyszukiwarka GIF-ów</h1>
     
-    <button id="gifButton">Pokaż nowy GIF!</button>
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Wpisz frazę...">
+        <button id="searchButton">Szukaj!</button>
+    </div>
     
     <div id="gifContainer">
-        <img id="gifImage" src="" alt="Czekam na GIF...">
+        <img id="gifImage" src="" alt="Wpisz frazę i kliknij Szukaj.">
     </div>
 
     <script src="app.js"></script>
